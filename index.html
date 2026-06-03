@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Formation — Développement assisté par agents IA · CaSys Côte d'Ivoire</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --blue:#003C87;--blue-d:#002055;--blue-l:rgba(0,60,135,.18);
+  --gold:#F5B400;--gold-d:#C48E00;--gold-l:rgba(245,180,0,.15);
+  --white:#fff;--bg:#020c1a;
+  --teal:#5DCAA5;--coral:#F0997B;--purple:#C084FC;--red:#f87171;--green:#4ade80;--sky:#85B7EB;
+  --text:rgba(255,255,255,.85);--muted:rgba(255,255,255,.5);--dim:rgba(255,255,255,.25);
+  --card:rgba(255,255,255,.055);--card-h:rgba(255,255,255,.1);
+  --border:rgba(255,255,255,.1);--border-h:rgba(245,180,0,.4);
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;--font-code:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);overflow:hidden}
+
+/* CANVAS */
+#c{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+
+/* LAYOUT */
+#shell{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* TOP BAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;flex-shrink:0;background:rgba(2,8,24,.6);backdrop-filter:blur(16px);border-bottom:1px solid rgba(245,180,0,.15)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-ico{width:32px;height:32px;background:var(--blue);border:1.5px solid var(--gold);border-radius:8px;display:grid;place-items:center;font-family:var(--font-head);font-size:15px;font-weight:800;color:var(--gold);flex-shrink:0}
+.brand-name{font-family:var(--font-head);font-size:14px;font-weight:800;color:#fff;letter-spacing:.3px}
+.brand-sub{font-size:10px;color:var(--gold);letter-spacing:.4px;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.chap-pills{display:flex;gap:6px}
+.cpill{font-size:10px;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid;cursor:pointer;transition:.2s;letter-spacing:.04em;font-family:var(--font-body)}
+.cpill.pourquoi{border-color:rgba(248,113,113,.4);color:#f87171;background:rgba(248,113,113,.08)}
+.cpill.pourquoi.on,.cpill.pourquoi:hover{background:rgba(248,113,113,.22);border-color:#f87171}
+.cpill.formation{border-color:rgba(245,180,0,.4);color:var(--gold);background:rgba(245,180,0,.08)}
+.cpill.formation.on,.cpill.formation:hover{background:rgba(245,180,0,.22);border-color:var(--gold)}
+.cpill.repo{border-color:rgba(93,202,165,.4);color:var(--teal);background:rgba(93,202,165,.08)}
+.cpill.repo.on,.cpill.repo:hover{background:rgba(93,202,165,.22);border-color:var(--teal)}
+.slide-count{font-size:11px;color:var(--dim);font-family:var(--font-code)}
+
+/* MAIN */
+.main{flex:1;display:flex;align-items:stretch;overflow:hidden;min-height:0}
+.content-col{width:52%;padding:24px 28px;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow:hidden}
+.viz-col{flex:1;position:relative;pointer-events:none}
+
+/* SLIDE CONTENT */
+.slide-wrap{opacity:0;transform:translateY(16px);transition:opacity .45s,transform .45s}
+.slide-wrap.show{opacity:1;transform:none}
+.stag{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;transition:color .3s}
+.sh1{font-family:var(--font-head);font-size:clamp(20px,2.8vw,30px);font-weight:800;color:#fff;line-height:1.18;margin-bottom:10px}
+.sdesc{font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:16px}
+
+/* CARDS */
+.cards{display:grid;gap:8px;margin-bottom:12px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g1{grid-template-columns:1fr}
+.card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:12px 13px;transition:.22s;cursor:default}
+.card:hover{background:var(--card-h);border-color:var(--border-h);transform:translateY(-2px)}
+.ci{font-size:18px;margin-bottom:6px}
+.ct{font-size:11px;font-weight:600;color:#fff;margin-bottom:3px}
+.cb{font-size:10px;color:var(--muted);line-height:1.5}
+
+/* COMPARE */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.cmp-col{border-radius:10px;overflow:hidden}
+.cmp-hd{padding:7px 11px;font-size:10px;font-weight:700;letter-spacing:.04em}
+.cmp-hd.bad{background:rgba(120,30,30,.6);color:#fca5a5;border-bottom:1px solid rgba(248,113,113,.2)}
+.cmp-hd.good{background:rgba(10,80,50,.6);color:#4ade80;border-bottom:1px solid rgba(74,222,128,.2)}
+.cmp-body{background:rgba(0,0,0,.38);border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px}
+.cmp-row{padding:6px 11px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:flex-start;gap:7px}
+.cmp-row:last-child{border-bottom:none}
+.cmp-ico{font-size:11px;flex-shrink:0;margin-top:1px}
+.cmp-txt{font-size:9.5px;color:rgba(255,255,255,.62);line-height:1.5}
+.cmp-txt b{color:#fff;font-weight:600}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.trow{display:flex;align-items:flex-start;gap:9px;padding:8px 11px;background:var(--card);border-radius:8px;border:1px solid var(--border)}
+.tnum{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:9px;font-weight:800;flex-shrink:0;margin-top:1px}
+.ttit{font-size:10.5px;font-weight:600;color:#fff;margin-bottom:2px}
+.tbod{font-size:10px;color:var(--muted);line-height:1.45}
+
+/* SCENARIO */
+.scenario{border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:10px}
+.sc-head{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.04)}
+.sc-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px}
+.sc-title{font-size:10.5px;font-weight:600;color:#fff}
+.sc-body{display:grid;grid-template-columns:1fr 1fr}
+.sc-half{padding:9px 12px;font-size:9px;line-height:1.6;font-family:var(--font-code)}
+.sc-half.left{border-right:1px solid var(--border);color:#fca5a5;background:rgba(180,30,30,.08)}
+.sc-half.right{color:#86efac;background:rgba(30,120,60,.08)}
+.sc-lbl{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;opacity:.65;font-family:var(--font-body)}
+
+/* CODE */
+.cb-wrap{background:rgba(0,0,0,.55);border:1px solid rgba(245,180,0,.22);border-radius:10px;padding:10px 13px;margin-bottom:9px}
+.cb-lbl{font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;font-family:var(--font-body)}
+pre{white-space:pre-wrap;font-size:10px;line-height:1.68;font-family:var(--font-code);color:#93c5fd}
+.kw{color:var(--gold)}.str{color:#86efac}.cm{color:rgba(255,255,255,.3);font-style:italic}.pv{color:#fca5a5;font-style:italic}
+
+/* ANNOTATIONS */
+.anns{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.ann{display:flex;align-items:flex-start;gap:8px;background:var(--card);border-radius:7px;padding:7px 10px;border-left:2.5px solid}
+.ann-l{font-size:10px;font-weight:700;min-width:105px;margin-top:1px;font-family:var(--font-code)}
+.ann-b{font-size:10px;color:var(--muted);line-height:1.5}
+
+/* FLOW */
+.flow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.fpill{font-size:10px;font-weight:600;padding:4px 11px;border-radius:16px;border:1px solid}
+.farr{color:var(--dim);font-size:13px}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.step{display:flex;align-items:flex-start;gap:9px;padding:8px 11px;background:var(--card);border-radius:9px;border:1px solid var(--border)}
+.step-n{width:21px;height:21px;border-radius:50%;display:grid;place-items:center;font-size:9.5px;font-weight:800;flex-shrink:0;margin-top:1px}
+.step-t{font-size:10.5px;font-weight:600;color:#fff;margin-bottom:2px}
+.step-b{font-size:10px;color:var(--muted);line-height:1.45}
+
+/* MATRIX */
+.matrix{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.mx-row{display:grid;grid-template-columns:85px 1fr 1fr;gap:6px;align-items:start;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.mx-tool{font-size:10px;font-weight:700}
+.mx-col-lbl{font-size:8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px;font-family:var(--font-body)}
+.mx-col-txt{font-size:9.5px;color:var(--muted);line-height:1.45}
+
+/* REPO TREE */
+.tree{background:rgba(0,0,0,.5);border:1px solid rgba(93,202,165,.25);border-radius:10px;padding:11px 13px;font-family:var(--font-code);font-size:9.5px;line-height:1.8;color:#93c5fd;margin-bottom:9px}
+.tr-dir{color:var(--gold);font-weight:700}
+.tr-cmt{color:rgba(255,255,255,.3);font-style:italic}
+.tr-hi{color:var(--teal)}
+
+/* TIP */
+.tip{background:rgba(245,180,0,.1);border:1px solid rgba(245,180,0,.28);border-radius:8px;padding:8px 12px;font-size:10.5px;color:rgba(255,255,255,.75);line-height:1.55;margin-top:6px}
+
+/* CHAPTER DIVIDER */
+.ch-divider{background:linear-gradient(135deg,var(--blue-d),var(--bg));border-top:1px solid rgba(245,180,0,.3);border-bottom:1px solid rgba(245,180,0,.3);padding:18px 28px;display:flex;align-items:center;gap:16px;margin-bottom:0}
+.ch-num{font-family:var(--font-head);font-size:52px;font-weight:800;line-height:1;opacity:.15;color:#fff}
+.ch-title{font-family:var(--font-head);font-size:22px;font-weight:800;color:#fff}
+.ch-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.ch-badge{font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid;margin-top:8px;display:inline-block}
+
+/* NAV BOTTOM */
+.navbar{display:flex;align-items:center;justify-content:space-between;padding:10px 28px;flex-shrink:0;background:rgba(2,8,24,.6);backdrop-filter:blur(12px);border-top:1px solid rgba(245,180,0,.1)}
+.ndots{display:flex;gap:5px;align-items:center}
+.ndot{width:5px;height:5px;border-radius:50%;background:var(--dim);border:none;cursor:pointer;transition:.2s;padding:0;flex-shrink:0}
+.ndot.on{background:var(--gold);transform:scale(1.5)}
+.ndot.ch-mark{width:7px;height:7px;background:rgba(245,180,0,.3);border:1px solid rgba(245,180,0,.5)}
+.ndot.ch-mark.on{background:var(--gold);border-color:var(--gold)}
+.ndot:hover{background:rgba(245,180,0,.5)}
+.nbtns{display:flex;gap:8px}
+.nbtn{background:rgba(0,50,120,.5);border:1px solid rgba(245,180,0,.45);color:#fff;border-radius:30px;padding:7px 20px;font-size:11px;font-weight:600;cursor:pointer;transition:.18s;font-family:var(--font-body);letter-spacing:.04em}
+.nbtn:hover{background:var(--blue);border-color:var(--gold)}
+.nbtn:disabled{opacity:.22;cursor:default;transform:none}
+.kb-hint{font-size:9px;color:var(--dim);display:flex;gap:8px;align-items:center}
+.kb-key{background:rgba(255,255,255,.08);border:1px solid var(--dim);border-radius:4px;padding:2px 6px;font-family:var(--font-code);font-size:8px}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .viz-col{display:none}
+  .content-col{width:100%;padding:16px 18px}
+  .g3{grid-template-columns:repeat(2,1fr)}
+  .cmp{grid-template-columns:1fr}
+  .sc-body{grid-template-columns:1fr}
+  .sc-half.left{border-right:none;border-bottom:1px solid var(--border)}
+  .mx-row{grid-template-columns:1fr}
+  .chap-pills{display:none}
+  .kb-hint{display:none}
+  .topbar{padding:10px 16px}
+  .navbar{padding:8px 16px}
+  .sh1{font-size:clamp(18px,5vw,26px)}
+}
+@media(max-width:480px){
+  .g3,.g2{grid-template-columns:1fr}
+}
+
+/* PROGRESS BAR */
+.prog-bar{height:2px;background:rgba(255,255,255,.08);flex-shrink:0}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));transition:width .4s ease}
+
+/* COVER SLIDE */
+.cover{text-align:left}
+.cover .sh1{font-size:clamp(26px,4vw,42px);line-height:1.1;margin-bottom:14px}
+.cover-sub{font-size:13px;color:var(--gold);font-family:var(--font-code);letter-spacing:.05em;margin-bottom:20px}
+.cover-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+.ctag{font-size:10px;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid;font-family:var(--font-body)}
+
+/* CHAPTER SLIDE */
+.ch-slide{display:flex;flex-direction:column;justify-content:center;height:100%}
+.ch-slide .ch-n{font-family:var(--font-head);font-size:80px;font-weight:800;opacity:.08;color:#fff;line-height:1;margin-bottom:8px}
+.ch-slide .ch-t{font-family:var(--font-head);font-size:clamp(22px,3.5vw,34px);font-weight:800;color:#fff;line-height:1.15;margin-bottom:10px}
+.ch-slide .ch-d{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px;max-width:380px}
+.ch-slide .ch-slides{font-size:10px;color:var(--dim);font-family:var(--font-code)}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="shell">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-ico">C</div>
+      <div>
+        <div class="brand-name">CaSys<sup style="font-size:8px">™</sup> Côte d'Ivoire</div>
+        <div class="brand-sub">Agents IA · Formation 2026</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="chap-pills">
+        <button class="cpill pourquoi" onclick="jumpChapter(0)">Pourquoi les agents</button>
+        <button class="cpill formation" onclick="jumpChapter(1)">Formation agents IA</button>
+        <button class="cpill repo" onclick="jumpChapter(2)">Repo starter</button>
+      </div>
+      <div class="slide-count" id="sc2">1 / 27</div>
+    </div>
+  </div>
+  <div class="prog-bar"><div class="prog-fill" id="prog" style="width:3%"></div></div>
+  <div class="main">
+    <div class="content-col">
+      <div class="slide-wrap" id="panel"></div>
+    </div>
+    <div class="viz-col">
+      <canvas id="vc"></canvas>
+    </div>
+  </div>
+  <div class="navbar">
+    <div class="kb-hint">
+      <span><span class="kb-key">←</span><span class="kb-key">→</span> naviguer</span>
+      <span><span class="kb-key">1</span><span class="kb-key">2</span><span class="kb-key">3</span> chapitres</span>
+    </div>
+    <div class="ndots" id="dots"></div>
+    <div class="nbtns">
+      <button class="nbtn" id="bp" onclick="go(-1)">← Préc.</button>
+      <button class="nbtn" id="bn" onclick="go(1)">Suiv. →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   SLIDES DATA
+═══════════════════════════════════════ */
+var CHAPTERS=[
+  {key:'pourquoi',label:'Pourquoi les agents IA',color:'#f87171',start:0},
+  {key:'formation',label:'Formation agents IA',color:'#F5B400',start:10},
+  {key:'repo',label:'Repo starter kit',color:'#5DCAA5',start:21},
+];
+
+var SLIDES=[
+/* ────────── CHAPITRE 0 : POURQUOI ────────── */
+{ch:0,type:'chapter',
+ n:'01',t:'Pourquoi des agents IA\npluôt que le chat ?',
+ d:'Chat, IDE, CLI simple — tous excellents pour des tâches isolées. Mais ils montrent leurs limites dès que le travail devient complexe, multi-fichiers ou répétitif.',
+ slides:'Slides 1–9',viz:'intro'},
+
+{ch:0,tag:'Pourquoi · Vue d\'ensemble',h1:'Chat, IDE, CLI…\ntrois outils, trois limites',
+ desc:'Chaque mode d\'interaction avec l\'IA a son domaine d\'excellence — et ses angles morts. Comprendre ces limites, c\'est comprendre pourquoi les agents existent.',
+ type:'cards3',viz:'intro',
+ cards:[
+  {i:'💬',t:'Chat (claude.ai…)',b:'Idéal pour expliquer et brainstormer. Pas de mémoire projet, pas d\'accès au code réel.'},
+  {i:'🖥',t:'IDE assistant (Copilot…)',b:'Complète du code dans l\'éditeur. Contexte limité aux fichiers ouverts.'},
+  {i:'⌨️',t:'CLI simple (-p flag)',b:'Un prompt → une réponse. Pas d\'enchaînement, pas de vérification automatique.'}
+ ]},
+
+{ch:0,tag:'Limite 1 · Mémoire',h1:'Le chat oublie tout\nentre les sessions',
+ desc:'Chaque conversation repart de zéro. Vous ré-expliquez la stack, les conventions, les patterns — à chaque fois.',
+ type:'cmp',viz:'memory',
+ bad:{head:'Chat classique',rows:[
+  {i:'❌',t:'<b>Contexte perdu</b> entre sessions. Stack, patterns, décisions à répéter.'},
+  {i:'❌',t:'<b>Réponses génériques</b> faute de contexte — code qui ne compile pas sur votre stack.'},
+  {i:'❌',t:'<b>Conventions oubliées</b> : "pas de any TypeScript" dit lundi, ignoré mardi.'},
+ ]},
+ good:{head:'Agent avec config projet',rows:[
+  {i:'✅',t:'<b>Lit le fichier de config au démarrage</b> — stack, commandes, patterns toujours disponibles.'},
+  {i:'✅',t:'<b>Décisions permanentes</b> encodées une fois — jamais à répéter.'},
+  {i:'✅',t:'<b>Code aligné sur votre projet réel</b> — framework, ORM, tests, conventions d\'équipe.'},
+ ]}},
+
+{ch:0,tag:'Limite 2 · Scope',h1:'Le chat travaille sur\nun fichier à la fois',
+ desc:'Une feature réelle touche 5, 10, 20 fichiers. Le chat voit ce que vous collez. L\'agent navigue le codebase entier.',
+ type:'cmp',viz:'scope',
+ bad:{head:'Chat ou IDE assistant',rows:[
+  {i:'❌',t:'<b>Contexte = ce que vous copiez-collez.</b> Un fichier oublié → code incohérent.'},
+  {i:'❌',t:'<b>Pas de navigation du repo</b> — imports, interfaces et types existants ignorés.'},
+  {i:'❌',t:'<b>Chaque réponse repart à zéro</b> — aucune accumulation de connaissance sur la feature.'},
+ ]},
+ good:{head:'Agent Scout + Codeur',rows:[
+  {i:'✅',t:'<b>Scout cartographie d\'abord</b> : fichiers impactés, dépendances, types existants.'},
+  {i:'✅',t:'<b>Codeur écrit en connaissance de cause</b> — imports corrects, interfaces respectées.'},
+  {i:'✅',t:'<b>Contexte partagé</b> entre agents — le Testeur sait ce que le Codeur a écrit.'},
+ ]}},
+
+{ch:0,tag:'Limite 3 · Vérification',h1:'Le chat ne vérifie pas\nce qu\'il produit',
+ desc:'Un assistant génère du code et vous le donne. Il ne lance pas les tests. Vous êtes le QA. L\'agent bloque si les tests sont rouges.',
+ type:'cmp',viz:'verify',
+ bad:{head:'Prompt → réponse',rows:[
+  {i:'❌',t:'<b>Aucune validation</b> — le code est plausible, pas prouvé.'},
+  {i:'❌',t:'<b>Aucun fail-fast</b> — continue même si l\'étape précédente était incorrecte.'},
+  {i:'❌',t:'<b>Erreurs en cascade</b> — mauvaise migration → code qui s\'appuie dessus → tests cassés.'},
+ ]},
+ good:{head:'Workflow avec fail-fast',rows:[
+  {i:'✅',t:'<b>Testeur lance les tests</b> après chaque modification — ⛔ BLOQUANT si rouge.'},
+  {i:'✅',t:'<b>Workflow stoppé</b> dès qu\'une étape échoue — on ne livre pas sur une base cassée.'},
+  {i:'✅',t:'<b>Couverture vérifiée</b> — l\'agent refuse de continuer si le seuil n\'est pas atteint.'},
+ ]}},
+
+{ch:0,tag:'Limite 4 · Répétition',h1:'Vous répétez les mêmes\ninstructions à chaque fois',
+ desc:'"Utilise le pattern Repository", "écris les tests en même temps", "pas de any TypeScript"… Ces règles, vous les tapez à chaque conversation. Un agent les encode une fois.',
+ type:'timeline',viz:'repeat',
+ rows:[
+  {n:'1',c:'#f87171',t:'Sans agent — chaque conversation',b:'"Notre stack est NestJS + TypeORM + PostgreSQL. N\'utilise pas de any TypeScript. Tests Jest obligatoires. Couverture min 80%." — tapé à chaque session.'},
+  {n:'2',c:'#F5B400',t:'Avec un fichier de config projet',b:'Ces règles sont dans CLAUDE.md une seule fois. Chaque agent les lit au démarrage — automatiquement, sans que vous les répétiez.'},
+  {n:'3',c:'#4ade80',t:'Avec un agent spécialisé',b:'L\'agent Codeur a ces règles dans ses Responsabilités. Même un prompt minimal produit du code conforme à vos standards.'},
+ ],
+ tip:'Un agent bien écrit encode l\'expertise de votre équipe — conventions, patterns, garde-fous — et les applique systématiquement.'},
+
+{ch:0,tag:'Limite 5 · Orchestration',h1:'Le CLI simple n\'enchaîne\npas les étapes',
+ desc:'"claude -p \'Ajoute la pagination\'" génère du code. Mais qui vérifie les types ? Qui lance les tests ? Qui documente ? Qui alerte si la migration casse l\'existant ?',
+ type:'scenario',viz:'orchestrate',
+ sc:{badge:'CLI vs Agent',bc:'rgba(180,30,30,.4)',btc:'#fca5a5',title:'Implémenter pagination',
+  left:'claude -p \'Ajoute pagination\'\n→ Code généré\n→ Vous lancez les tests\n→ Tests rouges\n→ Vous déboguez\n→ Vous relancez\n→ Vous documentez\n→ Vous faites la review',
+  right:'Agent /new-feature pagination\n→ Agenda décompose\n→ DBA adapte le schéma\n→ Codeur implémente\n→ Testeur valide ⛔\n→ Réviseur approuve\n→ Doc générée auto'},
+ tip:'Le skill /new-feature encode le workflow complet — chaque étape est assurée, dans l\'ordre, avec vérification.'},
+
+{ch:0,tag:'Quand utiliser quoi ?',h1:'Le bon outil\nau bon moment',
+ desc:'Les agents ne remplacent pas le chat — ils le complètent. Chaque mode a sa place selon la complexité et le caractère répétitif de la tâche.',
+ type:'matrix',viz:'matrix',
+ rows:[
+  {tool:'💬 Chat',tc:'#F5B400',best:'Question ponctuelle, explication, brainstorming, rédaction',limit:'Pas de mémoire. Pas d\'accès au code. Résultats non vérifiés.'},
+  {tool:'🖥 IDE',tc:'#85B7EB',best:'Complétion inline, refacto rapide sur un fichier ouvert',limit:'Contexte limité. Pas d\'orchestration. Pas de tests auto.'},
+  {tool:'⌨️ CLI -p',tc:'#5DCAA5',best:'Prototype rapide, script one-shot, question ad hoc',limit:'Un prompt = une réponse. Pas d\'enchaînement ni de vérification.'},
+  {tool:'🤖 Agent',tc:'#4ade80',best:'Feature complète, fix root-cause, release, audit — tout ce qui est multi-étape et répété',limit:'Overhead de configuration. Pas justifié pour une question simple.'},
+ ],
+ tip:'Règle pratique : si la tâche touche plus de 2 fichiers, prend plus de 10 min, ou sera répétée → agent.'},
+
+{ch:0,tag:'Synthèse · Pourquoi',h1:'5 raisons d\'utiliser\ndes agents IA',
+ desc:'Les agents transforment l\'IA d\'un assistant conversationnel en un système de livraison — prévisible, vérifiable, adapté à votre contexte.',
+ type:'cards3',viz:'summary0',
+ cards:[
+  {i:'🧠',t:'Mémoire permanente',b:'Stack, patterns, conventions encodés une fois. Toujours disponibles, jamais à répéter.'},
+  {i:'🗂',t:'Scope multi-fichiers',b:'L\'agent navigue le repo entier, lit les dépendances, écrit en connaissance de cause.'},
+  {i:'✅',t:'Vérification intégrée',b:'Tests lancés, couverture vérifiée. ⛔ BLOQUANT si quelque chose échoue.'},
+  {i:'🔁',t:'Règles systématiques',b:'Conventions et garde-fous appliqués à chaque invocation sans exception.'},
+  {i:'⚡',t:'Workflows orchestrés',b:'Feature, fix, release, audit — chaque étape dans l\'ordre, sans supervision manuelle.'},
+ ]},
+
+/* ────────── CHAPITRE 1 : FORMATION ────────── */
+{ch:1,type:'chapter',
+ n:'02',t:'Formation\naux agents IA',
+ d:'Comprendre les concepts, écrire des agents et des skills, configurer le contexte projet, créer interactivement depuis le terminal.',
+ slides:'Slides 10–20',viz:'f_intro'},
+
+{ch:1,tag:'Formation · Concepts',h1:'LLM, Agent, Skill :\nles 3 briques fondamentales',
+ desc:'Avant d\'écrire un agent, comprendre ce qu\'il est réellement — et la différence entre ces trois niveaux.',
+ type:'cards3',viz:'f_concepts',
+ cards:[
+  {i:'🧠',t:'LLM',b:'Modèle entraîné sur du texte massif. Comprend le contexte, génère du code. Pas de mémoire entre appels.'},
+  {i:'🤖',t:'Agent = LLM + rôle',b:'Un LLM avec une identité, un contexte projet et des outils (lire, écrire, exécuter). Expert de son domaine.'},
+  {i:'⚡',t:'Skill = workflow',b:'Séquence ordonnée d\'agents avec règles fail-fast. Une "recette" réutilisable sur tout projet.'},
+ ]},
+
+{ch:1,tag:'Formation · Anatomie agent',h1:'Écrire un agent :\nla structure complète',
+ desc:'Un fichier Markdown avec frontmatter YAML et 3 sections — lu comme un system prompt enrichi par le runtime CLI.',
+ type:'code+ann',viz:'f_agent',
+ code:`<span class="cm">---  # frontmatter YAML</span>
+<span class="kw">name:</span> <span class="str">auditeur-securite</span>
+<span class="kw">description:</span> <span class="str">Expert sécurité OWASP. Utiliser pour tout</span>
+  <span class="str">audit de code ou dépendances. Jamais en prod.</span>
+<span class="cm">---</span>
+
+<span class="kw">## Identité</span>
+Tu es un expert sécurité applicative.
+Commence par lire le fichier de config projet.
+
+<span class="kw">## Responsabilités</span>
+- Auditer selon OWASP Top 10 (A01–A10)
+- Ne PAS modifier de fichiers — lecture seule
+- Chaque CVE : criticité + fix + priorité
+
+<span class="kw">## Format de sortie</span>
+Rapport : criticité / description / fix / priorité`,
+ anns:[
+  {c:'#F5B400',l:'name',b:'Identifiant unique — l\'orchestrateur l\'utilise pour router la tâche.'},
+  {c:'#5DCAA5',l:'description',b:'CRITIQUE : le runtime lit ceci pour le routing automatique. Soyez précis et distinctif.'},
+  {c:'#85B7EB',l:'Identité',b:'Le "rôle" du LLM. Toujours inclure la lecture du fichier de config projet.'},
+  {c:'#F0997B',l:'Responsabilités',b:'"Ne PAS" aussi importants que les obligations — ils évitent les débordements de scope.'},
+ ]},
+
+{ch:1,tag:'Formation · Anatomie skill',h1:'Écrire un skill :\norchestration avec fail-fast',
+ desc:'Un skill enchaîne des agents dans un ordre précis, avec des conditions d\'arrêt explicites à chaque étape critique.',
+ type:'code+ann',viz:'f_skill',
+ code:`<span class="kw">## Objectif</span>
+Corriger un bug avec root cause analysis.
+Ne jamais corriger le symptôme sans trouver la cause.
+
+<span class="kw">## Étape 1 — Débogueur</span>  <span class="str">⛔ BLOQUANT si pas de root cause</span>
+Root cause analysis. Output : fichier:ligne + cause.
+Si introuvable → STOP, demander plus de contexte.
+
+<span class="kw">## Étape 2 — Scout</span>
+Cartographier les fichiers impactés. <span class="str">Lecture seule.</span>
+
+<span class="kw">## Étape 3 — Codeur</span>  <span class="str">⛔ BLOQUANT si tests rouges</span>
+Correction minimale. Test rouge → vert obligatoire.
+
+<span class="kw">## Règles fail-fast globales</span>
+Tout ⛔ BLOQUANT stoppe le workflow.`,
+ anns:[
+  {c:'#F5B400',l:'Objectif',b:'Principe directeur — les agents s\'y réfèrent en cas d\'ambiguïté.'},
+  {c:'#f87171',l:'⛔ BLOQUANT',b:'Condition d\'arrêt explicite. Sans fail-fast, les erreurs se propagent en cascade.'},
+  {c:'#5DCAA5',l:'Lecture seule',b:'Contraindre le scope de chaque agent — Scout cartographie, ne modifie pas.'},
+ ]},
+
+{ch:1,tag:'Formation · Plateformes',h1:'Claude Code, Gemini CLI,\nCodex : même concept',
+ desc:'Trois runtimes CLI, même paradigme d\'agents et de skills — avec quelques différences de syntaxe dans le frontmatter.',
+ type:'cards3',viz:'f_platforms',
+ cards:[
+  {i:'🟣',t:'Claude Code',b:'Agents dans .claude/agents/ · Skills dans .claude/skills/ · Config CLAUDE.md · Invocation @agent ou /skill'},
+  {i:'🔵',t:'Gemini CLI',b:'Agents dans .gemini/agents/ · Skills dans .gemini/skills/ · Config GEMINI.md · Champ tools: requis dans frontmatter'},
+  {i:'🟢',t:'OpenAI Codex',b:'Agents dans .codex/agents/ · Skills dans .agents/skills/ · Config AGENTS.md · routing: auto dans frontmatter'},
+ ]},
+
+{ch:1,tag:'Formation · Création interactive',h1:'Créer un agent\npar dialogue en terminal',
+ desc:'On ne code pas un agent — on le décrit en langage naturel. L\'IA génère, on affine en dialogue. Puis on propage sur les 3 plateformes.',
+ type:'prompts2',viz:'f_create',
+ p1lbl:'Prompt de génération',
+ p1:`Crée un agent <span class="pv">[nom-agent]</span> pour ce projet.
+
+Rôle : <span class="pv">[description précise du domaine]</span>
+Exemples de tâches :
+  · <span class="pv">[tâche concrète 1]</span>
+  · <span class="pv">[tâche concrète 2]</span>
+Ne doit PAS : <span class="pv">[contraintes de scope]</span>
+Format de sortie : <span class="pv">[structure attendue]</span>
+
+Génère avec frontmatter YAML + sections complètes.`,
+ p2lbl:'Dialogue d\'affinage + propagation',
+ p2:`→ "La description est trop vague — rends-la
+   distinctive de l'agent Réviseur."
+
+→ "Ajoute : ne jamais toucher aux migrations DB."
+
+→ "Adapte pour Gemini CLI : ajoute tools:
+   [read_file, write_file, shell]."
+
+→ "Génère aussi la version Codex avec routing: auto."`},
+
+{ch:1,tag:'Formation · Adapter la stack',h1:'Adapter les agents\nà votre stack réelle',
+ desc:'Un agent générique produit du code générique. L\'adaptation stack est l\'étape qui fait toute la différence entre un outil utile et un outil fiable.',
+ type:'cmp',viz:'f_adapt',
+ bad:{head:'Agent générique',rows:[
+  {i:'❌',t:'commandes : <b>npm run test</b> (votre projet utilise pytest)'},
+  {i:'❌',t:'ORM : <b>TypeORM findAndCount()</b> (vous utilisez SQLAlchemy)'},
+  {i:'❌',t:'Code produit en <b>NestJS</b> sur un projet Django → inutilisable'},
+ ]},
+ good:{head:'Agent adapté (après prompt)',rows:[
+  {i:'✅',t:'commandes : <b>pytest --cov=. --cov-report=xml</b>'},
+  {i:'✅',t:'ORM : <b>SQLAlchemy session.query()</b> + patterns DRF'},
+  {i:'✅',t:'Code aligné Django/Python — imports, serializers, PEP8'},
+ ]}},
+
+{ch:1,tag:'Formation · Config projet',h1:'Le fichier de config projet :\nle contexte permanent',
+ desc:'CLAUDE.md, GEMINI.md ou AGENTS.md — lu au démarrage par chaque agent. Généré automatiquement par l\'IA depuis votre codebase.',
+ type:'prompts2',viz:'f_config',
+ p1lbl:'Projet existant — analyse automatique',
+ p1:`Analyse ce projet et génère un fichier de config complet.
+
+Lis : <span class="pv">package.json / requirements.txt / go.mod</span>
+      <span class="pv">docker-compose.yml, README.md, src/ (2 niveaux)</span>
+
+Détecte : stack, commandes test/build/migration,
+  pattern d'accès données, auth, conventions, CI/CD.
+Marque <span class="pv">[NON DÉTECTÉ]</span> si introuvable.`,
+ p2lbl:'Nouveau projet — générer avant le code',
+ p2:`Je crée un projet <span class="pv">[type]</span>. Génère le fichier de config.
+Stack : <span class="pv">[backend / frontend / BDD / auth / conteneurs]</span>
+
+Génère MAINTENANT, avant d'écrire une ligne de code.
+Les agents s'appuieront dessus pour tous leurs choix
+de patterns, commandes et conventions.`},
+
+{ch:1,tag:'Formation · Synthèse',h1:'Ce que vous maîtrisez',
+ desc:'Les agents IA amplifient la capacité à livrer vite, correctement, sur n\'importe quelle stack.',
+ type:'cards3',viz:'f_summary',
+ cards:[
+  {i:'🧠',t:'Concepts',b:'LLM, agent, skill, orchestration, fail-fast'},
+  {i:'📝',t:'Écriture',b:'Frontmatter YAML, Identité, Responsabilités, Format'},
+  {i:'⚡',t:'Skills',b:'Séquences avec fail-fast — réutilisables sur tout projet'},
+  {i:'🔧',t:'Création CLI',b:'Générer et affiner par dialogue en terminal'},
+  {i:'🎯',t:'Adaptation',b:'Analyser les gaps, adapter à votre stack réelle'},
+  {i:'📄',t:'Config auto',b:'Fichier généré par l\'IA — projet existant ou nouveau'},
+ ]},
+
+/* ────────── CHAPITRE 2 : REPO ────────── */
+{ch:2,type:'chapter',
+ n:'03',t:'Le repo starter kit\nmultiagent-ai-project',
+ d:'Un point de départ optionnel — 16 agents et 6 skills préconfigurés pour Claude Code, Gemini CLI et Codex. À cloner, adapter, enrichir.',
+ slides:'Slides 21–26',viz:'r_intro'},
+
+{ch:2,tag:'Repo · Qu\'est-ce que c\'est ?',h1:'Un starter kit,\npas une contrainte',
+ desc:'Le repo multiagent-ai-project fournit une base d\'agents et de skills prêts à l\'emploi — pour démarrer vite. Vous pouvez partir de zéro, l\'utiliser tel quel, ou ne reprendre que certains agents.',
+ type:'cards3',viz:'r_what',
+ cards:[
+  {i:'📦',t:'16 agents préconfigurés',b:'Orchestrateur, Agenda, Scout, Codeur, Backend, Frontend, Testeur, Réviseur, Débogueur, Auditeur, Pentester, DevOps, DBA, UI, Doc, Fullstack'},
+  {i:'⚡',t:'6 skills prêts à l\'emploi',b:'/new-feature · /fix-bug · /new-module · /security-audit · /release · /review-mr'},
+  {i:'🔀',t:'3 plateformes',b:'Même agents et skills adaptés pour Claude Code, Gemini CLI et Codex — structure miroir'},
+ ]},
+
+{ch:2,tag:'Repo · Structure',h1:'Organisation\ndu repo',
+ desc:'Une structure miroir pour les 3 plateformes. Les fichiers de config projet sont à remplir — les agents sont prêts mais génériques.',
+ type:'tree',viz:'r_struct',
+ tree:`<span class="tr-dir">multiagent-ai-project/</span>
+  CLAUDE.md    <span class="tr-cmt">← à remplir : votre stack, commandes, patterns</span>
+  GEMINI.md    <span class="tr-cmt">← idem pour Gemini CLI</span>
+  AGENTS.md    <span class="tr-cmt">← idem pour Codex</span>
+  │
+  <span class="tr-dir">├── .claude/</span>
+  │   <span class="tr-dir">├── agents/</span>   <span class="tr-cmt">16 agents Claude Code (.md)</span>
+  │   └── <span class="tr-dir">skills/</span>   <span class="tr-cmt">6 skills Claude Code (.md)</span>
+  │
+  <span class="tr-dir">├── .gemini/</span>    <span class="tr-cmt">même structure, frontmatter Gemini</span>
+  <span class="tr-dir">├── .codex/agents/</span>
+  └── <span class="tr-dir">.agents/skills/</span>  <span class="tr-cmt">skills Codex + openai.yaml</span>`},
+
+{ch:2,tag:'Repo · Démarrage',h1:'Démarrer en 4 étapes',
+ desc:'Cloner, copier les agents dans votre projet, configurer le fichier de config via l\'IA, puis invoquer un premier skill.',
+ type:'timeline',viz:'r_start',
+ rows:[
+  {n:'1',c:'#5DCAA5',t:'Cloner et copier',b:'git clone mars225/multiagent-ai-project\ncp -r .claude .gemini .codex .agents /mon-projet/\ncp CLAUDE.md GEMINI.md AGENTS.md /mon-projet/'},
+  {n:'2',c:'#F5B400',t:'Générer le fichier de config via l\'IA',b:'Lancer claude dans /mon-projet/ et utiliser le prompt d\'analyse automatique : "Analyse ce projet et génère un CLAUDE.md complet."'},
+  {n:'3',c:'#85B7EB',t:'Adapter les agents à votre stack',b:'Utiliser le prompt d\'audit : "Analyse .claude/agents/ et compare à notre stack. Indique les agents à adapter."'},
+  {n:'4',c:'#4ade80',t:'Invoquer un premier skill',b:'claude → /new-feature ma-premiere-feature\nObserver l\'orchestrateur enchaîner les agents en temps réel.'},
+ ],
+ tip:'settings.local.json : créer localement après clonage, ne jamais commiter. Déjà dans le .gitignore du repo.'},
+
+{ch:2,tag:'Repo · Adapter à sa stack',h1:'Les agents sont génériques :\nadaptez-les',
+ desc:'Les 16 agents du repo sont écrits pour une stack "standard" (NestJS, TypeORM, Jest). Ils doivent être adaptés à votre contexte réel — c\'est une étape essentielle, pas optionnelle.',
+ type:'prompts2',viz:'r_adapt',
+ p1lbl:'Audit des agents du repo',
+ p1:`Analyse les agents dans .claude/agents/
+et compare-les à notre stack (voir CLAUDE.md).
+
+Pour chaque agent, indique :
+  1. Agents parfaitement adaptés → liste
+  2. Agents à adapter → liste + raison
+  3. Agents inutiles pour notre stack → liste
+  4. Agents manquants → suggestion de création`,
+ p2lbl:'Adapter un agent spécifique',
+ p2:`L'agent <span class="pv">[nom]</span> référence <span class="pv">[stack-générique]</span>.
+Notre stack est <span class="pv">[votre stack]</span>.
+
+Modifie-le pour :
+  1. Remplacer les références à <span class="pv">[stack-générique]</span>
+  2. Corriger les commandes de test
+  3. Adapter le pattern d'accès aux données
+  4. Générer aussi les versions .gemini/ et .codex/`},
+
+{ch:2,tag:'Repo · Synthèse globale',h1:'Ce que vous savez\nfaire maintenant',
+ desc:'De la compréhension des concepts à l\'utilisation d\'un starter kit adapté à votre contexte — le développement assisté par agents IA n\'a plus de secrets.',
+ type:'cards3',viz:'r_final',
+ cards:[
+  {i:'🔍',t:'Pourquoi des agents',b:'5 limites du chat/IDE/CLI → 5 raisons d\'orchestrer des agents'},
+  {i:'🧠',t:'Concepts maîtrisés',b:'LLM, agent, skill, fail-fast, orchestration, config projet'},
+  {i:'📝',t:'Écriture & création',b:'Agents et skills par dialogue CLI — adaptés à votre stack'},
+  {i:'📦',t:'Starter kit',b:'Repo à cloner, config à générer via IA, agents à adapter'},
+  {i:'⚡',t:'Workflows opérationnels',b:'new-feature, fix-bug, release, audit — en terminal'},
+  {i:'🚀',t:'Prochaine étape',b:'Créer vos propres agents métier et enrichir le starter kit'},
+ ]},
+];
+
+/* ═══════════════════════════════════════
+   BUILD HTML
+═══════════════════════════════════════ */
+function buildHTML(s){
+  if(s.type==='chapter'){
+    return '<div class="ch-slide">'+
+      '<div class="ch-n">'+s.n+'</div>'+
+      '<div class="stag" style="color:'+chapterColor(s.ch)+'">Chapitre '+s.n+'</div>'+
+      '<div class="sh1 ch-t">'+s.t.replace(/\n/,'<br>')+'</div>'+
+      '<div class="sdesc ch-d">'+s.d+'</div>'+
+      '<div class="ch-slides" style="color:'+chapterColor(s.ch)+'">'+s.slides+'</div>'+
+      '</div>';
+  }
+  var h='<div class="stag" style="color:'+chapterColor(s.ch)+'">'+s.tag+'</div>';
+  h+='<div class="sh1">'+s.h1.replace(/\n/,'<br>')+'</div>';
+  h+='<div class="sdesc">'+s.desc+'</div>';
+
+  if(s.type==='cards3'||s.type==='cards2'){
+    var g=s.cards.length<=3?'g'+s.cards.length:(s.cards.length===4?'g2':'g3');
+    h+='<div class="cards '+g+'">';
+    s.cards.forEach(function(c){h+='<div class="card"><div class="ci">'+c.i+'</div><div class="ct">'+c.t+'</div><div class="cb">'+c.b+'</div></div>';});
+    h+='</div>';
+  }
+  if(s.type==='cmp'){
+    h+='<div class="cmp">';
+    ['bad','good'].forEach(function(k){
+      var d=s[k],isBad=k==='bad';
+      h+='<div class="cmp-col"><div class="cmp-hd '+(isBad?'bad':'good')+'">'+(isBad?'✗ ':'✓ ')+d.head+'</div><div class="cmp-body">';
+      d.rows.forEach(function(r){h+='<div class="cmp-row"><span class="cmp-ico">'+r.i+'</span><span class="cmp-txt">'+r.t+'</span></div>';});
+      h+='</div></div>';
+    });
+    h+='</div>';
+  }
+  if(s.type==='timeline'){
+    h+='<div class="timeline">';
+    s.rows.forEach(function(r){h+='<div class="trow"><div class="tnum" style="background:'+r.c+'22;color:'+r.c+';border:1.5px solid '+r.c+'">'+r.n+'</div><div><div class="ttit">'+r.t+'</div><div class="tbod">'+r.b+'</div></div></div>';});
+    h+='</div>';
+    if(s.tip) h+='<div class="tip">💡 '+s.tip+'</div>';
+  }
+  if(s.type==='scenario'){
+    var sc=s.sc;
+    h+='<div class="scenario"><div class="sc-head" style="background:'+sc.bc+'20"><span class="sc-badge" style="background:'+sc.bc+';color:'+sc.btc+'">'+sc.badge+'</span><span class="sc-title">'+sc.title+'</span></div><div class="sc-body"><div class="sc-half left"><div class="sc-lbl">CLI simple / chat</div><pre>'+sc.left+'</pre></div><div class="sc-half right"><div class="sc-lbl">Agent + skill</div><pre>'+sc.right+'</pre></div></div></div>';
+    if(s.tip) h+='<div class="tip">💡 '+s.tip+'</div>';
+  }
+  if(s.type==='matrix'){
+    h+='<div class="matrix">';
+    s.rows.forEach(function(r){
+      h+='<div class="mx-row"><div class="mx-tool" style="color:'+r.tc+'">'+r.tool+'</div><div><div class="mx-col-lbl" style="color:#4ade80">Idéal pour</div><div class="mx-col-txt">'+r.best+'</div></div><div><div class="mx-col-lbl" style="color:#f87171">Limite</div><div class="mx-col-txt">'+r.limit+'</div></div></div>';
+    });
+    h+='</div>';
+    if(s.tip) h+='<div class="tip">💡 '+s.tip+'</div>';
+  }
+  if(s.type==='code+ann'){
+    h+='<div class="cb-wrap"><pre>'+s.code+'</pre></div>';
+    h+='<div class="anns">';
+    s.anns.forEach(function(a){h+='<div class="ann" style="border-color:'+a.c+'"><span class="ann-l" style="color:'+a.c+'">'+a.l+'</span><span class="ann-b">'+a.b+'</span></div>';});
+    h+='</div>';
+  }
+  if(s.type==='prompts2'){
+    h+='<div class="cb-wrap"><div class="cb-lbl">'+s.p1lbl+'</div><pre>'+s.p1+'</pre></div>';
+    h+='<div class="cb-wrap"><div class="cb-lbl">'+s.p2lbl+'</div><pre>'+s.p2+'</pre></div>';
+  }
+  if(s.type==='tree'){
+    h+='<div class="tree"><pre>'+s.tree+'</pre></div>';
+  }
+  if(s.type==='steps'){
+    h+='<div class="steps">';
+    s.steps.forEach(function(st){h+='<div class="step"><div class="step-n" style="background:'+st.c+'22;color:'+st.c+';border:1.5px solid '+st.c+'">'+st.n+'</div><div><div class="step-t">'+st.t+'</div><div class="step-b">'+st.b+'</div></div></div>';});
+    h+='</div>';
+    if(s.tip) h+='<div class="tip">💡 '+s.tip+'</div>';
+  }
+  return h;
+}
+
+function chapterColor(ch){
+  return ['#f87171','#F5B400','#5DCAA5'][ch]||'#F5B400';
+}
+
+/* ═══════════════════════════════════════
+   NAV
+═══════════════════════════════════════ */
+var cur=0;
+function render(idx){
+  var s=SLIDES[idx];
+  var p=document.getElementById('panel');
+  p.classList.remove('show');
+  setTimeout(function(){
+    p.innerHTML=buildHTML(s);
+    requestAnimationFrame(function(){p.classList.add('show');});
+  },120);
+  document.getElementById('sc2').textContent=(idx+1)+' / '+SLIDES.length;
+  var pct=((idx+1)/SLIDES.length*100).toFixed(1);
+  document.getElementById('prog').style.width=pct+'%';
+  document.getElementById('bp').disabled=idx===0;
+  document.getElementById('bn').disabled=idx===SLIDES.length-1;
+  document.querySelectorAll('.ndot').forEach(function(d,i){d.classList.toggle('on',i===idx);});
+  document.querySelectorAll('.cpill').forEach(function(p,i){p.classList.toggle('on',CHAPTERS[i]&&idx>=CHAPTERS[i].start&&(i===CHAPTERS.length-1||idx<CHAPTERS[i+1].start));});
+  setViz(s.viz||'intro',s.ch);
+}
+function go(d){var n=cur+d;if(n<0||n>=SLIDES.length)return;cur=n;render(cur);}
+function jumpChapter(ci){cur=CHAPTERS[ci].start;render(cur);}
+
+var dotsEl=document.getElementById('dots');
+SLIDES.forEach(function(s,i){
+  var d=document.createElement('button');
+  var isCh=s.type==='chapter';
+  d.className='ndot'+(isCh?' ch-mark':'');
+  d.setAttribute('aria-label','Slide '+(i+1));
+  d.onclick=function(){cur=i;render(cur);};
+  dotsEl.appendChild(d);
+});
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') go(-1);
+  if(e.key==='1') jumpChapter(0);
+  if(e.key==='2') jumpChapter(1);
+  if(e.key==='3') jumpChapter(2);
+});
+
+/* ═══════════════════════════════════════
+   CANVAS 3D — BG + VIZ
+═══════════════════════════════════════ */
+var bgC=document.getElementById('c');
+var bgX=bgC.getContext('2d');
+var vizC=document.getElementById('vc');
+var vizX=vizC.getContext('2d');
+var W,H,tick=0,currentViz='intro',currentCh=0;
+var particles=[];
+
+function resizeAll(){
+  W=bgC.width=bgC.offsetWidth;H=bgC.height=bgC.offsetHeight;
+  vizC.width=vizC.offsetWidth;vizC.height=vizC.offsetHeight;
+  initParticles();
+}
+
+function initParticles(){
+  particles=[];
+  for(var i=0;i<100;i++) particles.push({
+    x:Math.random()*W,y:Math.random()*H,
+    vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,
+    r:Math.random()*1.6+.3,a:Math.random()*.4+.1,
+    col:Math.random()<.5?'#003C87':'#F5B400'
+  });
+}
+
+function setViz(v,ch){currentViz=v;currentCh=ch||0;vizNodes=buildVizNodes(v);}
+
+/* VIZ NODE SETS */
+var VIZ_DEFS={
+  intro:[
+    {l:'LLM',x:.5,y:.3,c:'#F5B400',r:26},{l:'Agent',x:.3,y:.55,c:'#5DCAA5',r:22},
+    {l:'Skill',x:.7,y:.55,c:'#85B7EB',r:22},{l:'Chat',x:.2,y:.3,c:'rgba(255,255,255,.3)',r:18},
+    {l:'IDE',x:.5,y:.72,c:'rgba(255,255,255,.3)',r:18},{l:'CLI',x:.8,y:.3,c:'rgba(255,255,255,.3)',r:18},
+  ],
+  memory:[
+    {l:'Session\n1',x:.3,y:.28,c:'#f87171',r:22},{l:'Session\n2',x:.65,y:.28,c:'#f87171',r:22},
+    {l:'Oublié',x:.48,y:.42,c:'#f87171',r:18},{l:'CLAUDE\n.md',x:.48,y:.62,c:'#4ade80',r:28},
+    {l:'Agent',x:.75,y:.62,c:'#5DCAA5',r:22},{l:'Toujours\ndispo',x:.75,y:.82,c:'#4ade80',r:18},
+  ],
+  scope:[
+    {l:'1 fichier',x:.28,y:.28,c:'#f87171',r:24},{l:'Chat',x:.55,y:.22,c:'#f87171',r:20},
+    {l:'Scout',x:.45,y:.5,c:'#F5B400',r:22},{l:'Repo\nentier',x:.72,y:.42,c:'#4ade80',r:26},
+    {l:'Codeur',x:.72,y:.68,c:'#5DCAA5',r:22},{l:'Cohérent',x:.45,y:.75,c:'#4ade80',r:18},
+  ],
+  verify:[
+    {l:'Code\ngénéré',x:.35,y:.28,c:'#F5B400',r:24},{l:'❌ Non\ntesté',x:.65,y:.25,c:'#f87171',r:22},
+    {l:'Testeur',x:.5,y:.5,c:'#5DCAA5',r:24},{l:'⛔ STOP',x:.72,y:.52,c:'#f87171',r:20},
+    {l:'✅ Tests\nverts',x:.35,y:.72,c:'#4ade80',r:26},{l:'80%\ncouvert.',x:.65,y:.72,c:'#4ade80',r:20},
+  ],
+  repeat:[
+    {l:'Règle\nrépétée',x:.28,y:.28,c:'#f87171',r:22},{l:'Encore\nrépétée',x:.68,y:.28,c:'#f87171',r:20},
+    {l:'Fichier\nconfig',x:.48,y:.52,c:'#F5B400',r:30},{l:'1× ∞',x:.8,y:.52,c:'#4ade80',r:18},
+    {l:'Agent',x:.35,y:.74,c:'#5DCAA5',r:22},{l:'Cohérent\ntoujours',x:.65,y:.75,c:'#4ade80',r:20},
+  ],
+  orchestrate:[
+    {l:'CLI\nsimple',x:.25,y:.28,c:'#f87171',r:22},{l:'Vous\n= QA',x:.55,y:.22,c:'#f87171',r:20},
+    {l:'Agenda',x:.28,y:.5,c:'#F5B400',r:18},{l:'Codeur',x:.48,y:.42,c:'#5DCAA5',r:18},
+    {l:'Testeur',x:.65,y:.5,c:'#85B7EB',r:18},{l:'Réviseur',x:.5,y:.62,c:'#C084FC',r:18},
+    {l:'Doc',x:.3,y:.72,c:'#F0997B',r:16},{l:'✅\nLivré',x:.72,y:.68,c:'#4ade80',r:22},
+  ],
+  matrix:[
+    {l:'💬 Chat',x:.28,y:.3,c:'#F5B400',r:24},{l:'🖥 IDE',x:.68,y:.3,c:'#85B7EB',r:24},
+    {l:'⌨️ CLI',x:.28,y:.65,c:'#5DCAA5',r:24},{l:'🤖 Agent',x:.68,y:.65,c:'#4ade80',r:28},
+  ],
+  summary0:[
+    {l:'Mémoire',x:.28,y:.28,c:'#F5B400',r:20},{l:'Scope',x:.65,y:.28,c:'#5DCAA5',r:20},
+    {l:'Tests\nauto',x:.78,y:.52,c:'#85B7EB',r:20},{l:'Règles',x:.65,y:.75,c:'#C084FC',r:20},
+    {l:'Workflows',x:.28,y:.75,c:'#F0997B',r:20},{l:'Agent\nIA',x:.5,y:.5,c:'#4ade80',r:30},
+  ],
+  f_intro:[
+    {l:'LLM',x:.48,y:.28,c:'#F5B400',r:26},{l:'Agent',x:.28,y:.55,c:'#5DCAA5',r:22},
+    {l:'Skill',x:.68,y:.55,c:'#85B7EB',r:22},{l:'Config',x:.48,y:.75,c:'#C084FC',r:20},
+  ],
+  f_concepts:[
+    {l:'LLM',x:.5,y:.28,c:'#F5B400',r:26},{l:'Agent\n= LLM +\nrôle',x:.28,y:.58,c:'#5DCAA5',r:28},
+    {l:'Skill\n= workflow',x:.68,y:.58,c:'#85B7EB',r:28},{l:'Outils',x:.5,y:.8,c:'#F0997B',r:18},
+  ],
+  f_agent:[
+    {l:'name',x:.35,y:.25,c:'#F5B400',r:20},{l:'description',x:.65,y:.25,c:'#5DCAA5',r:20},
+    {l:'Identité',x:.28,y:.52,c:'#85B7EB',r:22},{l:'Responsab.',x:.7,y:.52,c:'#F0997B',r:22},
+    {l:'Format\nsortie',x:.5,y:.75,c:'#C084FC',r:22},
+  ],
+  f_skill:[
+    {l:'Objectif',x:.5,y:.22,c:'#F5B400',r:22},{l:'Débog.',x:.22,y:.45,c:'#f87171',r:20},
+    {l:'Scout',x:.42,y:.45,c:'#5DCAA5',r:20},{l:'Codeur',x:.62,y:.45,c:'#85B7EB',r:20},
+    {l:'⛔ STOP',x:.78,y:.45,c:'#f87171',r:18},{l:'Fail-fast',x:.5,y:.7,c:'#f87171',r:22},
+  ],
+  f_platforms:[
+    {l:'Claude\nCode',x:.28,y:.38,c:'#C084FC',r:26},{l:'Gemini\nCLI',x:.5,y:.28,c:'#85B7EB',r:26},
+    {l:'Codex',x:.72,y:.38,c:'#4ade80',r:26},{l:'Même\nconcept',x:.5,y:.65,c:'#F5B400',r:30},
+  ],
+  f_create:[
+    {l:'Prompt\nnaturel',x:.35,y:.28,c:'#F5B400',r:22},{l:'IA\ngénère',x:.65,y:.28,c:'#5DCAA5',r:22},
+    {l:'Affinage\ndialogue',x:.35,y:.6,c:'#85B7EB',r:22},{l:'Propagation\n3 plateformes',x:.65,y:.6,c:'#C084FC',r:22},
+  ],
+  f_adapt:[
+    {l:'Générique',x:.3,y:.32,c:'#f87171',r:24},{l:'Gap\ndétecté',x:.7,y:.32,c:'#F5B400',r:22},
+    {l:'Adapté',x:.5,y:.62,c:'#4ade80',r:28},{l:'Votre\nstack',x:.7,y:.65,c:'#5DCAA5',r:22},
+  ],
+  f_config:[
+    {l:'Codebase',x:.35,y:.28,c:'#85B7EB',r:22},{l:'IA\nanalyse',x:.65,y:.28,c:'#F5B400',r:22},
+    {l:'CLAUDE\n.md',x:.5,y:.58,c:'#4ade80',r:30},{l:'Agents\nadaptés',x:.5,y:.82,c:'#5DCAA5',r:22},
+  ],
+  f_summary:[
+    {l:'Concepts',x:.28,y:.28,c:'#F5B400',r:20},{l:'Écriture',x:.65,y:.28,c:'#5DCAA5',r:20},
+    {l:'Skills',x:.78,y:.52,c:'#85B7EB',r:20},{l:'Création',x:.65,y:.75,c:'#C084FC',r:20},
+    {l:'Adaptation',x:.28,y:.75,c:'#F0997B',r:20},{l:'Config',x:.5,y:.52,c:'#4ade80',r:28},
+  ],
+  r_intro:[
+    {l:'16\nagents',x:.35,y:.28,c:'#5DCAA5',r:26},{l:'6\nskills',x:.65,y:.28,c:'#F5B400',r:24},
+    {l:'Claude\nCode',x:.22,y:.6,c:'#C084FC',r:20},{l:'Gemini\nCLI',x:.5,y:.68,c:'#85B7EB',r:20},
+    {l:'Codex',x:.78,y:.6,c:'#4ade80',r:20},
+  ],
+  r_what:[
+    {l:'Starter\nkit',x:.5,y:.28,c:'#F5B400',r:28},{l:'16 agents',x:.28,y:.55,c:'#5DCAA5',r:24},
+    {l:'6 skills',x:.72,y:.55,c:'#85B7EB',r:24},{l:'3 platefor.',x:.5,y:.78,c:'#C084FC',r:20},
+  ],
+  r_struct:[
+    {l:'.claude/',x:.3,y:.3,c:'#C084FC',r:22},{l:'.gemini/',x:.5,y:.22,c:'#85B7EB',r:22},
+    {l:'.codex/',x:.7,y:.3,c:'#4ade80',r:22},{l:'CLAUDE\n.md',x:.3,y:.62,c:'#F5B400',r:24},
+    {l:'agents/',x:.5,y:.55,c:'#5DCAA5',r:20},{l:'skills/',x:.7,y:.62,c:'#F0997B',r:20},
+  ],
+  r_start:[
+    {l:'Cloner',x:.3,y:.28,c:'#5DCAA5',r:22},{l:'Config\nIA',x:.65,y:.28,c:'#F5B400',r:22},
+    {l:'Adapter',x:.3,y:.62,c:'#85B7EB',r:22},{l:'Premier\nskill',x:.65,y:.62,c:'#4ade80',r:26},
+  ],
+  r_adapt:[
+    {l:'Audit\nagents',x:.35,y:.28,c:'#F5B400',r:24},{l:'Gaps\ndetectés',x:.68,y:.28,c:'#f87171',r:22},
+    {l:'Adapter',x:.5,y:.55,c:'#5DCAA5',r:26},{l:'3 versions',x:.5,y:.78,c:'#4ade80',r:22},
+  ],
+  r_final:[
+    {l:'Pourquoi',x:.28,y:.28,c:'#f87171',r:20},{l:'Concepts',x:.65,y:.28,c:'#F5B400',r:20},
+    {l:'Workflows',x:.78,y:.55,c:'#5DCAA5',r:20},{l:'Starter',x:.65,y:.78,c:'#85B7EB',r:20},
+    {l:'Écriture',x:.28,y:.78,c:'#C084FC',r:20},{l:'🚀 Livrer',x:.5,y:.52,c:'#4ade80',r:32},
+  ],
+};
+
+var VIZ_EDGES={
+  intro:[[0,1],[0,2],[1,3],[2,4],[2,5]],
+  memory:[[0,2],[1,2],[2,3],[3,4],[4,5]],
+  scope:[[0,2],[1,2],[2,3],[3,4],[2,5]],
+  verify:[[0,1],[2,3],[2,4],[4,5]],
+  repeat:[[0,2],[1,2],[2,4],[2,3],[4,5]],
+  orchestrate:[[0,1],[2,3],[3,4],[4,6],[4,5],[5,7],[6,7]],
+  matrix:[[0,3],[1,3],[2,3]],
+  summary0:[[0,5],[1,5],[2,5],[3,5],[4,5]],
+  f_intro:[[0,1],[0,2],[1,3],[2,3]],
+  f_concepts:[[0,1],[0,2],[1,3],[2,3]],
+  f_agent:[[0,2],[1,2],[2,3],[2,4],[3,4]],
+  f_skill:[[0,1],[0,2],[0,3],[1,4],[2,4],[3,4],[4,5]],
+  f_platforms:[[0,3],[1,3],[2,3]],
+  f_create:[[0,1],[0,2],[1,3],[2,3]],
+  f_adapt:[[0,1],[0,2],[1,2],[2,3]],
+  f_config:[[0,2],[1,2],[2,3]],
+  f_summary:[[0,5],[1,5],[2,5],[3,5],[4,5]],
+  r_intro:[[0,2],[0,3],[1,2],[1,3],[1,4],[2,3],[3,4]],
+  r_what:[[0,1],[0,2],[0,3],[1,2],[2,3]],
+  r_struct:[[0,4],[1,4],[2,4],[3,4],[4,5]],
+  r_start:[[0,1],[0,2],[1,3],[2,3]],
+  r_adapt:[[0,1],[0,2],[1,2],[2,3]],
+  r_final:[[0,5],[1,5],[2,5],[3,5],[4,5]],
+};
+
+var vizNodes=[];
+function buildVizNodes(v){
+  var defs=VIZ_DEFS[v]||VIZ_DEFS['intro'];
+  var vW=vizC.offsetWidth||300,vH=vizC.offsetHeight||600;
+  return defs.map(function(n){return {l:n.l,x:n.x*vW,y:n.y*vH,c:n.c,r:n.r,phase:Math.random()*Math.PI*2};});
+}
+
+function drawBG(){
+  bgX.clearRect(0,0,W,H);
+  var cx=W*.5,cy=H*.5;
+  var grd=bgX.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*.7);
+  grd.addColorStop(0,'rgba(0,40,100,.12)');
+  grd.addColorStop(.6,'rgba(0,10,30,.06)');
+  grd.addColorStop(1,'rgba(2,8,24,0)');
+  bgX.fillStyle=grd;bgX.fillRect(0,0,W,H);
+
+  particles.forEach(function(p){
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=W;if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+    bgX.globalAlpha=p.a*.55;bgX.beginPath();bgX.arc(p.x,p.y,p.r,0,Math.PI*2);
+    bgX.fillStyle=p.col;bgX.fill();bgX.globalAlpha=1;
+  });
+
+  var chColors=['rgba(248,113,113,.06)','rgba(245,180,0,.06)','rgba(93,202,165,.06)'];
+  bgX.beginPath();bgX.arc(W*.18,H*.5,Math.min(W,H)*.45,0,Math.PI*2);
+  bgX.strokeStyle=chColors[currentCh]||chColors[0];bgX.lineWidth=1;
+  bgX.setLineDash([3,10]);bgX.stroke();bgX.setLineDash([]);
+}
+
+function drawViz(){
+  var vW=vizC.offsetWidth,vH=vizC.offsetHeight;
+  vizX.clearRect(0,0,vW,vH);
+
+  var es=VIZ_EDGES[currentViz]||[];
+  es.forEach(function(e){
+    var a=vizNodes[e[0]],b=vizNodes[e[1]];
+    if(!a||!b)return;
+    var pulse=Math.sin(tick*.016)*.5+.5;
+    vizX.beginPath();vizX.moveTo(a.x,a.y);vizX.lineTo(b.x,b.y);
+    vizX.strokeStyle='rgba(245,180,0,'+(0.1+pulse*.1)+')';
+    vizX.lineWidth=1.2;vizX.setLineDash([4,8]);vizX.stroke();vizX.setLineDash([]);
+    var prog=(tick*.014+e[0]*.3)%1;
+    var mx=a.x+(b.x-a.x)*prog,my=a.y+(b.y-a.y)*prog;
+    vizX.beginPath();vizX.arc(mx,my,2.5,0,Math.PI*2);
+    vizX.fillStyle='#F5B400';vizX.globalAlpha=.65;vizX.fill();vizX.globalAlpha=1;
+  });
+
+  vizNodes.forEach(function(nd){
+    if(!nd)return;
+    var pulse=Math.sin(tick*.02+nd.phase)*.5+.5;
+    var r=nd.r+pulse*2.5;
+    vizX.save();
+    vizX.beginPath();vizX.arc(nd.x,nd.y,r+8,0,Math.PI*2);
+    vizX.fillStyle=nd.c+'18';vizX.fill();
+    vizX.beginPath();vizX.arc(nd.x,nd.y,r,0,Math.PI*2);
+    vizX.strokeStyle=nd.c;vizX.lineWidth=1.8;
+    vizX.globalAlpha=.72+pulse*.12;vizX.stroke();
+    vizX.fillStyle=nd.c+'22';vizX.fill();
+    vizX.globalAlpha=1;
+    var lines=nd.l.split('\n');
+    vizX.font='bold 9px DM Sans,system-ui';
+    vizX.textAlign='center';vizX.textBaseline='middle';
+    vizX.fillStyle='#fff';vizX.globalAlpha=.9;
+    var ly=nd.y-(lines.length-1)*6;
+    lines.forEach(function(ln,li){vizX.fillText(ln,nd.x,ly+li*12);});
+    vizX.globalAlpha=1;vizX.restore();
+  });
+
+  var cx=vW*.5,cy=vH*.48,bigR=Math.min(vW,vH)*.38;
+  var glow=Math.sin(tick*.012)*.5+.5;
+  vizX.beginPath();vizX.arc(cx,cy,bigR,0,Math.PI*2);
+  vizX.strokeStyle='rgba(0,60,135,'+(0.05+glow*.04)+')';
+  vizX.lineWidth=1;vizX.setLineDash([3,10]);vizX.stroke();vizX.setLineDash([]);
+  vizX.beginPath();vizX.arc(cx,cy,bigR*.6,0,Math.PI*2);
+  vizX.strokeStyle='rgba(245,180,0,'+(0.04+glow*.03)+')';
+  vizX.lineWidth=.8;vizX.stroke();
+}
+
+function loop(){requestAnimationFrame(loop);tick++;drawBG();drawViz();}
+window.addEventListener('resize',function(){resizeAll();vizNodes=buildVizNodes(currentViz);});
+resizeAll();
+vizC.style.position='absolute';vizC.style.inset='0';vizC.style.width='100%';vizC.style.height='100%';
+render(0);loop();
+</script>
+</body>
+</html>
